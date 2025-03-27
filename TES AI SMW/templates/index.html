@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nothea - Asisten AI Anda</title>
+    <!-- Gunakan assets bundle untuk CSS -->
+    {% assets "css_all" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="description" content="Nothea - Asisten AI cerdas dan elegan untuk membantu Anda">
+    <meta name="theme-color" content="#7C3AED">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="title-container">
+                        <h1>Nothea</h1>
+                        <span class="version">v1.0.0</span>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <div class="model-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">AI Model:</span>
+                        <select id="model-select" class="model-select">
+                            <option value="combined">Combined Model</option>
+                            <option value="gemini">Gemini Pro</option>
+                            <option value="groq">Groq</option>
+                        </select>
+                    </div>
+                    <div class="feature-buttons">
+                        <button id="theme-toggle" class="feature-button" title="Toggle Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <button id="settings-toggle" class="feature-button" title="Settings">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="chat-container">
+            <div class="chat-header">
+                <div class="chat-info">
+                    <h2>Chat dengan Nothea</h2>
+                    <p>Asisten AI cerdas dan elegan</p>
+                </div>
+                <div class="chat-stats">
+                    <span class="stat-item">
+                        <i class="fas fa-message"></i>
+                        <span id="message-count">0</span>
+                    </span>
+                    <span class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span id="chat-time">00:00</span>
+                    </span>
+                </div>
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages will be added here -->
+            </div>
+
+            <div class="input-area" id="drop-zone">
+                <div class="file-preview" id="file-preview">
+                    <div class="file-info">
+                        <i class="fas fa-file-alt"></i>
+                        <div class="file-details">
+                            <span id="file-name"></span>
+                            <span id="file-size"></span>
+                        </div>
+                    </div>
+                    <button id="remove-file" class="remove-file">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="upload-progress" id="upload-progress">
+                    <div class="progress-bar" id="upload-progress-bar"></div>
+                </div>
+                <div class="input-wrapper">
+                    <textarea class="input-field" placeholder="Ketik pesan Anda di sini..." id="input-field"></textarea>
+                    <div class="input-controls">
+                        <button id="file-toggle" class="feature-button" title="Upload File">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <button id="emoji-toggle" class="feature-button" title="Emoji">
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        <button id="voice-toggle" class="feature-button" title="Voice Input">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="send-button" id="send-button">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Karakter 8bit Interaktif - Dipindahkan agar tidak menutupi tombol kirim -->
+        <div class="character-container" id="character-container">
+            <div class="character" id="character"></div>
+            <div class="character-speech" id="character-speech"></div>
+            <div class="character-menu" id="character-menu">
+                <div class="character-menu-item" data-action="introduce">Perkenalkan dirimu</div>
+                <div class="character-menu-item" data-action="help">Bantuan penggunaan</div>
+                <div class="character-menu-item" data-action="fun">Beri saya fakta menarik</div>
+                <div class="character-menu-item" data-action="close">Tutup menu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <button class="close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>Pengaturan</h2>
+            
+            <div class="settings-section model-settings">
+                <h3><i class="fas fa-robot"></i>Pengaturan Model AI</h3>
+                <div class="setting-item">
+                    <label>Kreativitas</label>
+                    <input type="range" id="creativity-slider" min="0" max="100" value="70" class="slider-input">
+                    <div class="slider-labels">
+                        <span>Presisi</span>
+                        <span>Kreatif</span>
+                    </div>
+                    <p class="setting-description">Atur tingkat kreativitas respons AI</p>
+                </div>
+                <div class="setting-item">
+                    <label>Panjang Respons</label>
+                    <select id="response-length" class="select-input">
+                        <option value="short">Pendek</option>
+                        <option value="medium" selected>Sedang</option>
+                        <option value="long">Panjang</option>
+                    </select>
+                    <p class="setting-description">Pilih panjang respons yang diinginkan</p>
+                </div>
+            </div>
+            
+            <div class="settings-section appearance">
+                <h3><i class="fas fa-paint-brush"></i>Tampilan</h3>
+                <div class="setting-item">
+                    <label>Tema Warna</label>
+                    <div class="color-picker">
+                        <button class="color-option active" data-color="default"></button>
+                        <button class="color-option" data-color="purple"></button>
+                        <button class="color-option" data-color="blue"></button>
+                        <button class="color-option" data-color="green"></button>
+                    </div>
+                    <p class="setting-description">Pilih tema warna yang Anda sukai</p>
+                </div>
+                <div class="setting-item">
+                    <label>Ukuran Font</label>
+                    <input type="range" id="font-size-slider" min="12" max="20" value="16" class="slider-input">
+                    <div class="slider-labels">
+                        <span>Kecil</span>
+                        <span>Besar</span>
+                    </div>
+                    <p class="setting-description">Atur ukuran teks sesuai preferensi Anda</p>
+                </div>
+            </div>
+            
+            <div class="settings-section fitur-tambahan">
+                <h3><i class="fas fa-magic"></i>Fitur Tambahan</h3>
+                <div class="setting-item">
+                    <div class="switch">
+                        <span>Text-to-Speech</span>
+                        <div class="switch-toggle">
+                            <input type="checkbox" id="text-to-speech-toggle">
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <p class="setting-description">Aktifkan pembacaan respons secara otomatis</p>
+                </div>
+                <div class="setting-item">
+                    <div class="switch">
+                        <span>Animasi</span>
+                        <div class="switch-toggle">
+                            <input type="checkbox" id="animations-toggle" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <p class="setting-description">Aktifkan animasi untuk pengalaman yang lebih baik</p>
+                </div>
+                <div class="setting-item">
+                    <div class="switch">
+                        <span>Auto-scroll</span>
+                        <div class="switch-toggle">
+                            <input type="checkbox" id="auto-scroll-toggle" checked>
+                            <span class="slider"></span>
+                        </div>
+                    </div>
+                    <p class="setting-description">Otomatis scroll ke pesan terbaru</p>
+                </div>
+            </div>
+
+            <div class="settings-section penyimpanan">
+                <h3><i class="fas fa-save"></i>Penyimpanan</h3>
+                <div class="setting-item">
+                    <button id="clear-history" class="danger-button">
+                        <i class="fas fa-trash"></i>
+                        Hapus Riwayat Chat
+                    </button>
+                    <p class="setting-description">Hapus semua riwayat percakapan</p>
+                </div>
+                <div class="setting-item">
+                    <button id="export-chat" class="action-button">
+                        <i class="fas fa-download"></i>
+                        Ekspor Chat
+                    </button>
+                    <p class="setting-description">Ekspor riwayat chat ke file</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Modal -->
+    <div class="modal" id="emoji-modal">
+        <div class="modal-content">
+            <button class="close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>Pilih Emoji</h2>
+            
+            <div class="emoji-categories">
+                <button class="emoji-category active" data-category="recent">Terbaru</button>
+                <button class="emoji-category" data-category="smileys">Emoji</button>
+                <button class="emoji-category" data-category="people">Orang</button>
+                <button class="emoji-category" data-category="nature">Alam</button>
+                <button class="emoji-category" data-category="food">Makanan</button>
+                <button class="emoji-category" data-category="activities">Aktivitas</button>
+                <button class="emoji-category" data-category="objects">Objek</button>
+                <button class="emoji-category" data-category="symbols">Simbol</button>
+                <button class="emoji-category" data-category="flags">Bendera</button>
+            </div>
+            
+            <div id="emoji-grid" class="emoji-grid">
+                <!-- Emojis will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <button class="quick-action" data-action="help">
+            <i class="fas fa-question-circle"></i>
+            Bantuan
+        </button>
+        <button class="quick-action" data-action="clear">
+            <i class="fas fa-eraser"></i>
+            Bersihkan
+        </button>
+        <button class="quick-action" data-action="save">
+            <i class="fas fa-save"></i>
+            Simpan
+        </button>
+    </div>
+
+    <script>
+        // Pastikan semua tombol utama terpasang dengan benar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme Toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const body = document.body;
+            
+            // Check saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                body.classList.add('light-mode');
+            }
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    body.classList.toggle('light-mode');
+                    localStorage.setItem('theme', body.classList.contains('light-mode') ? 'light' : 'dark');
+                });
+            }
+
+            // Settings Toggle
+            const settingsToggle = document.getElementById('settings-toggle');
+            const settingsModal = document.getElementById('settings-modal');
+            
+            if (settingsToggle && settingsModal) {
+                settingsToggle.addEventListener('click', function() {
+                    console.log('Settings button clicked');
+                    settingsModal.classList.add('active');
+                });
+                
+                // Close modal when close button is clicked
+                const closeModalButtons = document.querySelectorAll('.close-modal');
+                closeModalButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const modal = this.closest('.modal');
+                        if (modal) modal.classList.remove('active');
+                    });
+                });
+                
+                // Close modal when clicking outside
+                window.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('modal')) {
+                        e.target.classList.remove('active');
+                    }
+                });
+            }
+
+            // Switch Toggles
+            const switches = document.querySelectorAll('.switch input[type="checkbox"]');
+            switches.forEach(switchEl => {
+                switchEl.addEventListener('change', function() {
+                    const settingName = this.id.replace('-toggle', '');
+                    localStorage.setItem(settingName, this.checked);
+                });
+                
+                // Load saved state
+                const settingName = switchEl.id.replace('-toggle', '');
+                const savedState = localStorage.getItem(settingName);
+                if (savedState !== null) {
+                    switchEl.checked = savedState === 'true';
+                }
+            });
+
+            // Select Input
+            const responseLength = document.getElementById('response-length');
+            if (responseLength) {
+                responseLength.addEventListener('change', function() {
+                    localStorage.setItem('response-length', this.value);
+                });
+
+                // Load saved response length
+                const savedLength = localStorage.getItem('response-length');
+                if (savedLength) {
+                    responseLength.value = savedLength;
+                }
+            }
+            
+            console.log('All event listeners registered successfully');
+        });
+    </script>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='character.js') }}"></script>
+</body>
+</html>
